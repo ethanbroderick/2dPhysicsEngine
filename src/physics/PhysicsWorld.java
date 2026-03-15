@@ -10,7 +10,7 @@ public class PhysicsWorld  implements  Runnable{
     private boolean edgeStatus = true; // Turns edge collision on by default
 
     private static final int cps = 1000; // Calculations per second limiter
-    private static final float timeMultiplier = 0.01f; // Slows down or speeds up simulation
+    private static final float timeMultiplier = 0.005f; // Slows down or speeds up simulation
 
     private ArrayList<RigidBody> objects = new ArrayList<>();
 
