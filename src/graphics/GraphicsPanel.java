@@ -10,6 +10,7 @@ public class GraphicsPanel extends JPanel implements Runnable {
 
     private final int height;
     ArrayList<RigidBody> objects = new ArrayList<>();
+    private final static int fps = 1000;
 
     public GraphicsPanel(int height) {
         this.height = height;
@@ -34,25 +35,27 @@ public class GraphicsPanel extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        int fps = 240;
-        double drawInterval = 1000000000 / fps;
-        double delta = 0;
+        final double delta = 1.0 / fps;
+        double accumulator = 0.0;
+
         long lastTime = System.nanoTime();
-        long currentTime;
 
         while(graphicsThread != null) {
 
-            currentTime = System.nanoTime();
-
-            delta += (currentTime - lastTime) / drawInterval;
-
+            long currentTime = System.nanoTime();
+            double frameTime = (currentTime - lastTime) / 1000000000.0;
             lastTime = currentTime;
 
-            if (delta >=1) {
+            frameTime = Math.min(frameTime, 0.25);
+
+            accumulator += frameTime;
+
+
+            if (accumulator >= delta) {
                 // Paint
                 repaint();
 
-                delta--;
+                accumulator -= delta;
             }
         }
     }

@@ -27,7 +27,7 @@ public class RigidBody {
         this.velocity = new Vec2(0, 0);
         this.force = new Vec2(0, 0);
         this.radius = radius;
-        this.mass = mass;
+        this.mass = mass * 1000;
     }
 
     // Getters and Setters
@@ -74,7 +74,7 @@ public class RigidBody {
     }
 
     public void setMass(float mass) {
-        this.mass = mass;
+        this.mass = mass * 1000;
     }
 
     public void setActive() {

@@ -27,26 +27,26 @@ class Main {
         PhysicsWorld world = new PhysicsWorld(new Vec2(worldWidth, worldHeight));
 
         // Spawns Particles
-        int numOfParticles = 500;
-        int addedLaterNum = 3000;
+        int numOfParticles = 5000;
+        int addedLaterNum = 5000;
         RigidBody[] particles = new RigidBody[numOfParticles + addedLaterNum];
         Random random = new Random();
-        int cols = 50;
-        int spacing = 25;
+        int cols = 100;
+        int spacing = 10;
 
         for (int i = 0; i < numOfParticles; i++) {
 
             int row = i / cols;
             int col = i % cols;
 
-            float x = col * spacing + 50;
+            float x = col * spacing + 500;
             float y = row * spacing + 500;
 
-            particles[i] = new RigidBody(x, y, 10, 5);
+            particles[i] = new RigidBody(x, y, 25, 5);
 
             world.addObject(particles[i]);
-            particles[i].setRestitution(0.3f);
-            particles[i].setVelocity(new Vec2(random.nextFloat(100f), random.nextFloat(50f)));
+            particles[i].setRestitution(0.1f);
+            particles[i].setVelocity(new Vec2(random.nextFloat(10f), random.nextFloat(10f)));
             particles[i].setActive();
             panel.addObject(particles[i]);
         }
@@ -59,7 +59,7 @@ class Main {
 
         // Waits then adds extra balls
         try {
-            Thread.sleep(5000);
+            Thread.sleep(7500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -67,10 +67,11 @@ class Main {
         System.out.println("Adding Particles");
 
         for (int i = numOfParticles; i < addedLaterNum + numOfParticles; i++) {
-            particles[i] = new RigidBody(50, 800, 10, 5);
+            particles[i] = new RigidBody(random.nextFloat(10, 1900), 980, 25, 5);
             world.addObject(particles[i]);
-            particles[i].setRestitution(0.3f);
-            particles[i].setVelocity(new Vec2(250, -50));
+            particles[i].setRestitution(0.1f);
+            particles[i].setVelocity(new Vec2(0, -500));
+
             particles[i].setActive();
             panel.addObject(particles[i]);
             try {

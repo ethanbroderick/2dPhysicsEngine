@@ -11,8 +11,8 @@ public class PhysicsWorld  implements  Runnable{
 
     private final int CELL_SIZE = 40;
     private ArrayList<RigidBody>[][] grid;
-    private int gridWidth;
-    private int gridHeight;
+    private final int gridWidth;
+    private final int gridHeight;
 
     private boolean edgeStatus = true; // Turns edge collision on by default
     private static final int cps = 1000; // Calculations per second limiter
@@ -88,18 +88,18 @@ public class PhysicsWorld  implements  Runnable{
 
     private void edgeDetection(RigidBody object) {
         if (object.getPosition().i > this.WORLD_SIZE.i - object.getRadius()) {
-            object.setVelocityIComp(-object.getVelocity().i);
+            object.setVelocityIComp(-object.getVelocity().i * object.getRestitution());
             object.setPosition(new Vec2(this.WORLD_SIZE.i - object.getRadius(), object.getPosition().j));
         } else if (object.getPosition().i < 0) {
-            object.setVelocityIComp(-object.getVelocity().i);
+            object.setVelocityIComp(-object.getVelocity().i * object.getRestitution());
             object.setPosition(new Vec2(object.getRadius(), object.getPosition().j));
         }
 
         if (object.getPosition().j > this.WORLD_SIZE.j - object.getRadius()) {
-            object.setVelocityJComp(-object.getVelocity().j);
+            object.setVelocityJComp(-object.getVelocity().j * object.getRestitution());
             object.setPosition(new Vec2(object.getPosition().i, this.WORLD_SIZE.j - object.getRadius()));
         } else if (object.getPosition().j < object.getRadius()) {
-            object.setVelocityJComp(-object.getVelocity().j);
+            object.setVelocityJComp(-object.getVelocity().j * object.getRestitution());
             object.setPosition(new Vec2(object.getPosition().i, object.getRadius()));
         }
     }
@@ -163,7 +163,7 @@ public class PhysicsWorld  implements  Runnable{
         while(worldThread != null) {
 
             long currentTime = System.nanoTime();
-            double frameTime = (currentTime - lastTime) / 1_000_000_000.0;
+            double frameTime = (currentTime - lastTime) / 1000000000.0;
             lastTime = currentTime;
 
             frameTime = Math.min(frameTime, 0.25);
