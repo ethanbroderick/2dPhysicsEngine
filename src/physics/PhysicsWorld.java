@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class PhysicsWorld  implements  Runnable{
-    private final Vec2 GRAVITY = new Vec2(0, -9.81f);
+    private final Vec2 GRAVITY = new Vec2(0, -98.1f);
     private final Vec2 WORLD_SIZE;
 
     private final int CELL_SIZE = 40;

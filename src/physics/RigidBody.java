@@ -122,8 +122,10 @@ public class RigidBody {
 
             Vec2 unitNormal = normal.divideByScalar(distance);
 
-            this.position = this.position.sub(unitNormal.multiplyByScalar(overlap / 2));
-            other.setPosition(other.getPosition().add(unitNormal.multiplyByScalar(overlap / 2)));
+            float overlapDampening = 0.5f;
+
+            this.position = this.position.sub(unitNormal.multiplyByScalar(overlap * overlapDampening / 2));
+            other.setPosition(other.getPosition().add(unitNormal.multiplyByScalar(overlap * overlapDampening / 2)));
 
             // Calculation of new velocities
             Vec2 unitTangent = new Vec2(-unitNormal.j, unitNormal.i);
