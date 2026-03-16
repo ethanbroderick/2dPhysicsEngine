@@ -5,6 +5,7 @@ import maths.Vec2;
 
 import javax.swing.JFrame;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 class Main {
     public static void main(String[] args) {
@@ -27,7 +28,8 @@ class Main {
 
         // Spawns Particles
         int numOfParticles = 500;
-        RigidBody[] particles = new RigidBody[numOfParticles];
+        int addedLaterNum = 3000;
+        RigidBody[] particles = new RigidBody[numOfParticles + addedLaterNum];
         Random random = new Random();
         int cols = 50;
         int spacing = 25;
@@ -40,11 +42,11 @@ class Main {
             float x = col * spacing + 50;
             float y = row * spacing + 500;
 
-            particles[i] = new RigidBody(x, y, 10, 10);
+            particles[i] = new RigidBody(x, y, 10, 5);
 
             world.addObject(particles[i]);
-            particles[i].setRestitution(0.75f);
-            particles[i].setVelocity(new Vec2(random.nextFloat(1000f), random.nextFloat(1000f)));
+            particles[i].setRestitution(0.3f);
+            particles[i].setVelocity(new Vec2(random.nextFloat(100f), random.nextFloat(50f)));
             particles[i].setActive();
             panel.addObject(particles[i]);
         }
@@ -54,5 +56,30 @@ class Main {
 
         // Starts physics thread
         world.startWorldThread();
+
+        // Waits then adds extra balls
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("Adding Particles");
+
+        for (int i = numOfParticles; i < addedLaterNum + numOfParticles; i++) {
+            particles[i] = new RigidBody(50, 800, 10, 5);
+            world.addObject(particles[i]);
+            particles[i].setRestitution(0.3f);
+            particles[i].setVelocity(new Vec2(250, -50));
+            particles[i].setActive();
+            panel.addObject(particles[i]);
+            try {
+                Thread.sleep(25);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.printf("There are %d objects in the world.\n", world.getNumOfObjects());
     }
 }

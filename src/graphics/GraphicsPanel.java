@@ -64,7 +64,13 @@ public class GraphicsPanel extends JPanel implements Runnable {
 
         g2.setColor(Color.black);
 
-        for (RigidBody object : objects) {
+        ArrayList<RigidBody> snapshot;
+
+        synchronized (objects) {
+            snapshot = new ArrayList<>(objects);
+        }
+
+        for (RigidBody object : snapshot) {
             // Y Coordinate is the height of the window - the objects position as JFrame uses the top left as 0,0 and not the bottom right
             g2.fillOval((int)object.getPosition().i,  height - (int)object.getPosition().j, object.getRadius() * 2, object.getRadius() * 2);
             //System.out.printf("Drawing at, x: %d, y: %d\n", (int)object.getPosition().i, height - (int)object.getPosition().j);

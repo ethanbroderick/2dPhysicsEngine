@@ -3,35 +3,79 @@ package physics;
 import maths.Vec2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PhysicsWorld  implements  Runnable{
     private final Vec2 GRAVITY = new Vec2(0, -9.81f);
     private final Vec2 WORLD_SIZE;
-    private boolean edgeStatus = true; // Turns edge collision on by default
 
+    private final int CELL_SIZE = 40;
+    private ArrayList<RigidBody>[][] grid;
+    private int gridWidth;
+    private int gridHeight;
+
+    private boolean edgeStatus = true; // Turns edge collision on by default
     private static final int cps = 1000; // Calculations per second limiter
-    private static final float timeMultiplier = 0.005f; // Slows down or speeds up simulation
+    private static final float timeMultiplier = 4f; // Slows down or speeds up simulation
 
     private ArrayList<RigidBody> objects = new ArrayList<>();
 
     public PhysicsWorld() {
         this.WORLD_SIZE = new Vec2(1000, 1000);
+        gridWidth = 25;
+        gridHeight = 25;
+        this.grid = new ArrayList[this.gridWidth][this.gridHeight];
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                grid[x][y] = new ArrayList<>();
+            }
+        }
     }
 
     public PhysicsWorld(Vec2 worldSize) {
         this.WORLD_SIZE = worldSize;
+        this.WORLD_SIZE.i = (int) this.WORLD_SIZE.i;
+        this.WORLD_SIZE.j = (int) this.WORLD_SIZE.j;
+
+        // Sets the grid's dimensions to fit the world size + any extra after dividing by 40
+        this.gridWidth = ((int) worldSize.i) / CELL_SIZE + 1;
+        this.gridHeight = ((int)worldSize.j) / CELL_SIZE + 1;
+        this.grid = new ArrayList[this.gridWidth][this.gridHeight];
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                grid[x][y] = new ArrayList<>();
+            }
+        }
+    }
+
+    public int getNumOfObjects() {
+        return objects.size();
+    }
+
+    private void clearGrid() {
+        for (int i = 0; i < this.gridWidth; i++) {
+            for (int j = 0; j < this.gridHeight; j++) {
+                this.grid[i][j].clear();
+            }
+        }
     }
 
     public void addObject(RigidBody newObject) {
-        objects.add(newObject);
+        synchronized (objects) {
+            objects.add(newObject);
+        }
     }
 
     public void destroyObject(int index) {
-        objects.remove(index);
+        synchronized (objects) {
+            objects.remove(index);
+        }
     }
 
     public RigidBody getObject(int index) {
-        return objects.get(index);
+        synchronized (objects) {
+            return objects.get(index);
+        }
     }
 
     private void toggleEdgesOn() {
@@ -61,35 +105,44 @@ public class PhysicsWorld  implements  Runnable{
     }
 
     private void updateWorld(float dt) {
-        for (RigidBody object : objects) {
-            if (!object.getActiveStatus()) {continue;} // Skips all inactive objects
 
-            object.setForce(object.getForce().add(GRAVITY.multiplyByScalar(object.getMass()))); // Applies Gravity Force
-            object.setVelocity(object.getVelocity().add(object.getForce().divideByScalar(object.getMass()).multiplyByScalar(dt*timeMultiplier))); // Updates the Velocity by calculating acceleration
+        clearGrid();
 
-            if (edgeStatus) {this.edgeDetection(object);} // Adds collision against the edge of the world
-        }
+        synchronized (objects) {
+            for (RigidBody object : objects) {
+                if (!object.getActiveStatus()) {
+                    continue;
+                } // Skips all inactive objects
 
-        for (int i = 0; i < objects.size(); i++) {
-            RigidBody objectA = objects.get(i);
+                object.setForce(object.getForce().add(GRAVITY.multiplyByScalar(object.getMass()))); // Applies Gravity Force
+                object.setVelocity(object.getVelocity().add(object.getForce().divideByScalar(object.getMass()).multiplyByScalar(dt * timeMultiplier))); // Updates the Velocity by calculating acceleration
 
-            if (!objectA.getActiveStatus()) {continue;}
+                if (edgeStatus) {
+                    this.edgeDetection(object);
+                } // Adds collision against the edge of the world
 
-            for (int j = i + 1; j < objects.size(); j++) {
-                RigidBody objectB = objects.get(j);
 
-                if (!objectB.getActiveStatus()) {continue;}
+                // Collision Logic
+                this.grid[(int)object.getPosition().i / CELL_SIZE][(int)object.getPosition().j / CELL_SIZE].add(object); // Adds all objects to their grid cell
 
-                objectA.collision(objectB);
+                for (int x = (int)object.getPosition().i / CELL_SIZE - 1; x <= (int)object.getPosition().i / CELL_SIZE + 1; x++) {
+                    for (int y = (int)object.getPosition().j / CELL_SIZE - 1; y <= (int)object.getPosition().j / CELL_SIZE + 1; y++) {
+
+                        if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
+                            continue;
+
+                        for (RigidBody other : grid[x][y]) {
+
+                            if (object == other) continue;
+
+                            object.collision(other);
+                        }
+                    }
+                }
+
+                object.setPosition(object.getPosition().add(object.getVelocity().multiplyByScalar(dt * timeMultiplier))); // Updates position
+                object.clearForce();
             }
-
-        }
-
-        for (RigidBody object : objects) {
-            if (!object.getActiveStatus()) {continue;} // Skips all inactive objects
-
-            object.setPosition(object.getPosition().add(object.getVelocity().multiplyByScalar(dt*timeMultiplier))); // Updates position
-            object.clearForce();
         }
     }
 
@@ -102,25 +155,28 @@ public class PhysicsWorld  implements  Runnable{
 
     @Override
     public void run() {
-        double calculationInterval = 1000000000 / cps;
-        double delta = 0;
+        final double delta = 1.0 / cps;
+        double accumulator = 0.0;
+
         long lastTime = System.nanoTime();
-        long currentTime;
 
         while(worldThread != null) {
 
-            currentTime = System.nanoTime();
-
-            delta += (currentTime - lastTime) / calculationInterval;
-
+            long currentTime = System.nanoTime();
+            double frameTime = (currentTime - lastTime) / 1_000_000_000.0;
             lastTime = currentTime;
 
-            if (delta >= 1) {
+            frameTime = Math.min(frameTime, 0.25);
+
+            accumulator += frameTime;
+
+
+            if (accumulator >= delta) {
 
                 // Calls the update function
-                updateWorld((float)delta);
+                updateWorld(1f / cps);
 
-                delta--;
+                accumulator -= delta;
             }
         }
     }
